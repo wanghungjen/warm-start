@@ -24,6 +24,9 @@ def create(strategiesForOne: int, strategiesForTwo: int, myBound: int) -> list[t
 
 # Our Payoff Matrix
 matrix = create(3, 3, 3)
+print(matrix)
+oppMatrix = [[j*-1 for j in i] for i in matrix]
+print(oppMatrix)
 
 # Definitions
 numberOfActions: int = 3
@@ -93,7 +96,7 @@ def train(iterations: int):
 
         for i in range(0, numberOfActions):
             myActionUtility[i] = matrix[i][oppAction]
-            oppActionUtility[i] = matrix[myAction][i]
+            oppActionUtility[i] = oppMatrix[myAction][i]
         
         for i in range(0, numberOfActions):
             regretSum[i] += myActionUtility[i] - myActionUtility[myAction]
