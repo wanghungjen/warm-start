@@ -102,7 +102,7 @@ def get_exploitability(matrix, row_strategy, col_strategy):
 def train(iterations: int):
     global regretSum
     global oppRegretSum
-    global exploitabilities
+    exploitabilities = []
     
     myActionUtility: list[float] = [0] * numberOfActions
     oppActionUtility: list[float] = [0] * numberOfActions
@@ -113,6 +113,8 @@ def train(iterations: int):
         
         myAction: int = getAction(myStrategy)
         oppAction: int = getAction(oppStrategy)
+        # myAction: int = get_row_best_response(matrix, np.array(oppStrategy))
+        # oppAction: int = get_row_best_response(oppMatrix, np.array(myStrategy))
 
         for i in range(0, numberOfActions):
             myActionUtility[i] = matrix[i][oppAction]
@@ -122,9 +124,10 @@ def train(iterations: int):
             regretSum[i] += myActionUtility[i] - myActionUtility[myAction]
             oppRegretSum[i] += oppActionUtility[i] - oppActionUtility[oppAction]
 
-        exploitabilities.append(get_exploitability(matrix, np.array(myStrategy), np.array(oppStrategy)))
+        exploitabilities.append(get_exploitability(matrix, np.array(getMyAverageStrategy()), np.array(getOppAverageStrategy())))
         # print(strategy)
         # print(oppStrategy)
+    return exploitabilities
 
 
 def getMyAverageStrategy() -> list[float]:
@@ -156,11 +159,18 @@ def getOppAverageStrategy() -> list[float]:
 
 rm_exploitabilitiesz = []
 for t in tqdm(range(8)):
-    exploitabilities = []
     matrix = np.array(create(numberOfActions))
     oppMatrix = -matrix.T
-    train(10000)
-    rm_exploitabilitiesz.append(exploitabilities)
+    rm_exploitabilitiesz.append(train(100000))
+
+    # Reset
+    regretSum: list[float] = [0] * numberOfActions
+    strategy: list[float] = [0] * numberOfActions
+    strategySum: list[float] = [0] * numberOfActions
+    oppRegretSum: list[float] = [0] * numberOfActions
+    oppStrategy: list[float] = [0] * numberOfActions
+    oppStrategySum: list[float] = [0] * numberOfActions
+    exploitabilities: list[float] = []
 
 plt.plot([sum(x)/len(x) for x in zip(*rm_exploitabilitiesz)])
 plt.yscale('log')
