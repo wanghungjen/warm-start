@@ -3,79 +3,80 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
+# TODO: Figure out numberOfActions correctly
 class Finder():
     # Definitions
-    numberOfActions: int
+    # numberOfActions: int
     
     # Constructor
-    def __init__(self, strategies: int):
-        self.numberOfActions = strategies
-        self.regretSum: list[float] = [0] * self.numberOfActions
-        self.strategy: list[float] = [0] * self.numberOfActions
-        self.strategySum: list[float] = [0] * self.numberOfActions
-        self.oppRegretSum: list[float] = [0] * self.numberOfActions
-        self.oppStrategy: list[float] = [0] * self.numberOfActions
-        self.oppStrategySum: list[float] = [0] * self.numberOfActions
-        self.exploitabilities: list[float] = []
-    
-    # Creating Matrix
-    def start(self):
-        # Populating the game
-        self.matrix = [[0] * self.numberOfActions for _ in range(self.numberOfActions)]
-
-        for playerOneStrategy in range(0, self.numberOfActions):
-            for playerTwoStrategy in range(0, self.numberOfActions):
-                self.matrix[playerOneStrategy][playerTwoStrategy] = random.uniform(-1, 1)
-
-        self.matrix = np.array(self.matrix)
+    def __init__(self, matrix):
+        self.matrix = matrix
         self.oppMatrix = -self.matrix.T
+        self.numberOfOppActions = matrix[0].size
+        self.numberOfMyActions = matrix.size // self.numberOfOppActions
+        self.regretSum: list[float] = [0] * self.numberOfMyActions
+        self.strategy: list[float] = [0] * self.numberOfMyActions
+        self.strategySum: list[float] = [0] * self.numberOfMyActions
+        self.oppRegretSum: list[float] = [0] * self.numberOfOppActions
+        self.oppStrategy: list[float] = [0] * self.numberOfOppActions
+        self.oppStrategySum: list[float] = [0] * self.numberOfOppActions
+        self.exploitabilities: list[float] = []
 
     # Get current mixed strategy through regret-matching
     def getStrategy(self) -> list[float]:
         normalizingSum: float = 0
-        for i in range(0, self.numberOfActions):
+        for i in range(0, self.numberOfMyActions):
             if (self.regretSum[i] > 0):
                 self.strategy[i] = self.regretSum[i]
             else:
                 self.strategy[i] = 0
             normalizingSum += self.strategy[i]
-        for i in range(0, self.numberOfActions):
+        for i in range(0, self.numberOfMyActions):
             if (normalizingSum > 0):
                 self.strategy[i] /= normalizingSum
             else:
-                self.strategy[i] = 1 / self.numberOfActions
+                self.strategy[i] = 1 / self.numberOfMyActions
             self.strategySum[i] += self.strategy[i]
         return self.strategy
 
     def getOppStrategy(self) -> list[float]:
         normalizingSum: float = 0
-        for i in range(0, self.numberOfActions):
+        for i in range(0, self.numberOfOppActions):
             if (self.oppRegretSum[i] > 0):
                 self.oppStrategy[i] = self.oppRegretSum[i]
             else:
                 self.oppStrategy[i] = 0
             normalizingSum += self.oppStrategy[i]
-        for i in range(0, self.numberOfActions):
+        for i in range(0, self.numberOfOppActions):
             if (normalizingSum > 0):
                 self.oppStrategy[i] /= normalizingSum
             else:
-                self.oppStrategy[i] = 1 / self.numberOfActions
+                self.oppStrategy[i] = 1 / self.numberOfOppActions
             self.oppStrategySum[i] += self.oppStrategy[i]
         return self.oppStrategy
 
-    def getAction(self, myStrategy: list[float]) -> int:
+    def getMyAction(self, myStrategy: list[float]) -> int:
         randomNum: float = random.uniform(0, 1)
         i: int = 0
         cumulativeProbability: float = 0
-        while(i < (self.numberOfActions - 1)):
+        while(i < (self.numberOfMyActions - 1)):
             cumulativeProbability += myStrategy[i]
             if (randomNum < cumulativeProbability):
                 break
             i += 1
         return i
 
+    def getOppAction(self, myStrategy: list[float]) -> int:
+        randomNum: float = random.uniform(0, 1)
+        i: int = 0
+        cumulativeProbability: float = 0
+        while(i < (self.numberOfOppActions - 1)):
+            cumulativeProbability += myStrategy[i]
+            if (randomNum < cumulativeProbability):
+                break
+            i += 1
+        return i
 
-    # TODO: Write it my own way
     def get_row_best_response(self, matrix, col_strategy):
         # Given a matrix game and col_strategy, the best response is the row which maximizes expected payoff
         
@@ -102,24 +103,28 @@ class Finder():
     def train(self, iterations: int):
         exploitabilities = []
         
-        myActionUtility: list[float] = [0] * self.numberOfActions
-        oppActionUtility: list[float] = [0] * self.numberOfActions
+        myActionUtility: list[float] = [0] * self.numberOfMyActions
+        oppActionUtility: list[float] = [0] * self.numberOfOppActions
 
         for i in range(0, iterations):
             myStrategy: list[float] = self.getStrategy()
             oppStrategy: list[float] = self.getOppStrategy()
             
-            myAction: int = self.getAction(myStrategy)
-            oppAction: int = self.getAction(oppStrategy)
+            myAction: int = self.getMyAction(myStrategy)
+            oppAction: int = self.getOppAction(oppStrategy)
             # myAction: int = get_row_best_response(matrix, np.array(oppStrategy))
             # oppAction: int = get_row_best_response(oppMatrix, np.array(myStrategy))
             
-            for i in range(0, self.numberOfActions):
+            for i in range(0, self.numberOfMyActions):
                 myActionUtility[i] = self.matrix[i][oppAction]
+                
+            for i in range(0, self.numberOfOppActions):    
                 oppActionUtility[i] = self.oppMatrix[i][myAction]
             
-            for i in range(0, self.numberOfActions):
+            for i in range(0, self.numberOfMyActions):
                 self.regretSum[i] += myActionUtility[i] - myActionUtility[myAction]
+            
+            for i in range(0, self.numberOfOppActions):
                 self.oppRegretSum[i] += oppActionUtility[i] - oppActionUtility[oppAction]
 
             exploitabilities.append(self.get_exploitability(self.matrix, np.array(self.getMyAverageStrategy()), np.array(self.getOppAverageStrategy())))
@@ -127,43 +132,63 @@ class Finder():
 
 
     def getMyAverageStrategy(self) -> list[float]:
-        averageStrategy: list[float] = [0] * self.numberOfActions
+        averageStrategy: list[float] = [0] * self.numberOfMyActions
         normalizingSum: float = 0
-        for i in range(0, self.numberOfActions):
+        for i in range(0, self.numberOfMyActions):
             normalizingSum += self.strategySum[i]
-        for i in range(0, self.numberOfActions):
+        for i in range(0, self.numberOfMyActions):
             if (normalizingSum > 0):
                 averageStrategy[i] = self.strategySum[i] / normalizingSum
             else:
-                averageStrategy[i] = 1 / self.numberOfActions
+                averageStrategy[i] = 1 / self.numberOfMyActions
         return averageStrategy
 
     def getOppAverageStrategy(self) -> list[float]:
-        averageStrategy: list[float] = [0] * self.numberOfActions
+        averageStrategy: list[float] = [0] * self.numberOfOppActions
         normalizingSum: float = 0
-        for i in range(0, self.numberOfActions):
+        for i in range(0, self.numberOfOppActions):
             normalizingSum += self.oppStrategySum[i]
-        for i in range(0, self.numberOfActions):
+        for i in range(0, self.numberOfOppActions):
             if (normalizingSum > 0):
                 averageStrategy[i] = self.oppStrategySum[i] / normalizingSum
             else:
-                averageStrategy[i] = 1 / self.numberOfActions
+                averageStrategy[i] = 1 / self.numberOfOppActions
         return averageStrategy
 
 
+
+def create(x: int, y: int):
+    # Populating the game
+    matrix = [[0] * y for _ in range(x)]
+
+    for playerOneStrategy in range(0, x):
+        for playerTwoStrategy in range(0, y):
+            matrix[playerOneStrategy][playerTwoStrategy] = random.uniform(-1, 1)
+
+    return np.array(matrix)
+    # self.oppMatrix = -self.matrix.T
+
 rm_exploitabilitiesz = []
-for t in tqdm(range(8)):
-    # Initialize number of actions
-    finder = Finder(100)
+# print(create(5, 3))
 
-    # Generate random matrix
-    finder.start()
+#Initialize Game
+# myGame = create(3, 5)
+# print(myGame)
+# for t in tqdm(range(8)):
+#     # print(myGame)
+    
+#     # Initialize number of actions
+#     finder = Finder(myGame)
 
-    # Train!
-    rm_exploitabilitiesz.append(finder.train(1000))
+#     # Train!
+#     rm_exploitabilitiesz.append(finder.train(1000))
 
-plt.plot([sum(x)/len(x) for x in zip(*rm_exploitabilitiesz)])
-plt.yscale('log')
-plt.xscale('log')
-plt.title('RM')
-plt.show()
+#     # Nash Equilibrium!
+#     print(finder.getMyAverageStrategy())
+#     print(finder.getOppAverageStrategy())
+
+# plt.plot([sum(x)/len(x) for x in zip(*rm_exploitabilitiesz)])
+# plt.yscale('log')
+# plt.xscale('log')
+# plt.title('RM')
+# plt.show()
