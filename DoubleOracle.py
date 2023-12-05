@@ -34,55 +34,65 @@ oppMixedStrategy[oppCurBestIndex] = 1
 myIndexes = [0]
 oppIndexes = [0]
 
-# Determine "best response" indexes for both player 1 and player 2
-myBestResponse = get_row_best_response(myMatrix, oppMixedStrategy)
-oppBestResponse = get_row_best_response(oppMatrix, myMixedStrategy)
+# Loop Starts
 
-DOadd(myIndexes, myBestResponse)
-DOadd(oppIndexes, oppBestResponse)
+while(True):
+    print("ITERATION START\n")
 
-# Create minigame
-print("myIndexes: ", myIndexes)
-print("oppIndexes: ", oppIndexes)
-minigame = [[0] * len(oppIndexes) for _ in range(len(myIndexes))]
-print("minigame: ", minigame)
+    # Determine "best response" indexes for both player 1 and player 2
+    myBestResponse = get_row_best_response(myMatrix, oppMixedStrategy)
+    oppBestResponse = get_row_best_response(oppMatrix, myMixedStrategy)
 
-cur_x = 0
-cur_y = 0
-for x in range(0, gameSize):
-    if x in myIndexes:
-        for y in range(0, gameSize):
-            if y in oppIndexes:
-                print("cur_x: ", cur_y)
-                print("cur_y: ", cur_y)
-                minigame[cur_x][cur_y] = game[x][y]
-                cur_y += 1
-        cur_x += 1
-        cur_y = 0
-print("game: ", game)
-print("minigame: ", minigame)
+    print("myBestReponse: ", myBestResponse)
+    print("oppBestReponse: ", oppBestResponse)
 
-# Implement Regret Matching & Find New Mixed Strategies
-finder = Finder(np.array(minigame))
-finder.train(1000)
-myNewMixedStrategy = finder.getMyAverageStrategy()
-oppNewMixedStrategy = finder.getOppAverageStrategy()
-print("myNewMixedStrategy: ", myNewMixedStrategy)
-print("oppNewMixedStrategy: ", oppNewMixedStrategy)
+    if (myBestResponse in myIndexes) and (oppBestResponse in oppIndexes):
+        break
 
-my_cur_index = 0
-opp_cur_index = 0
-for index in range(0, gameSize):
-    if index in myIndexes:
-        myMixedStrategy[index] = myNewMixedStrategy[my_cur_index]
-        my_cur_index += 1
-    if index in oppIndexes:
-        oppMixedStrategy[index] = oppNewMixedStrategy[opp_cur_index]
-        opp_cur_index += 1
+    DOadd(myIndexes, myBestResponse)
+    DOadd(oppIndexes, oppBestResponse)
 
-print(myMixedStrategy)
-print(oppMixedStrategy)
+    # Create minigame
+    print("myIndexes: ", myIndexes)
+    print("oppIndexes: ", oppIndexes)
+    minigame = [[0] * len(oppIndexes) for _ in range(len(myIndexes))]
+    print("minigame: ", minigame)
 
-# TODO: Continue determining until best response is already present in both sets
+    cur_x = 0
+    cur_y = 0
+    for x in range(0, gameSize):
+        if x in myIndexes:
+            for y in range(0, gameSize):
+                if y in oppIndexes:
+                    print("cur_x: ", cur_y)
+                    print("cur_y: ", cur_y)
+                    minigame[cur_x][cur_y] = game[x][y]
+                    cur_y += 1
+            cur_x += 1
+            cur_y = 0
+    print("game: ", game)
+    print("minigame: ", minigame)
 
-# TODO: Return smaller matrix & its nash equilibrium
+    # Implement Regret Matching & Find New Mixed Strategies
+    finder = Finder(np.array(minigame))
+    finder.train(1000)
+    myNewMixedStrategy = finder.getMyAverageStrategy()
+    oppNewMixedStrategy = finder.getOppAverageStrategy()
+    print("myNewMixedStrategy: ", myNewMixedStrategy)
+    print("oppNewMixedStrategy: ", oppNewMixedStrategy)
+
+    my_cur_index = 0
+    opp_cur_index = 0
+    for index in range(0, gameSize):
+        if index in myIndexes:
+            myMixedStrategy[index] = myNewMixedStrategy[my_cur_index]
+            my_cur_index += 1
+        if index in oppIndexes:
+            oppMixedStrategy[index] = oppNewMixedStrategy[opp_cur_index]
+            opp_cur_index += 1
+
+    print(myMixedStrategy)
+    print(oppMixedStrategy)
+
+print("My Nash Equilibrium: ", myMixedStrategy)
+print("Opp Nash Equilibrium: ", oppMixedStrategy)
