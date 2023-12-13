@@ -168,7 +168,7 @@ def create(x: int, y: int):
     return np.array(matrix)
     # self.oppMatrix = -self.matrix.T
 
-rm_exploitabilitiesz = []
+# rm_exploitabilitiesz = []
 # print(create(5, 3))
 
 #Initialize Game

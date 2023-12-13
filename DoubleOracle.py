@@ -1,6 +1,7 @@
 from RegretMatching import create
 from RegretMatching import Finder
 import numpy as np
+import matplotlib.pyplot as plt
 
 def get_row_best_response(matrix, col_strategy):
         # Given a matrix game and col_strategy, the best response is the row which maximizes expected payoff
@@ -15,8 +16,9 @@ def DOadd(indexes: list, response: int):
         return indexes
 
 # Initialize 100 x 100 matrix (& opp.matrix)
-gameSize = 5
+gameSize = 100
 game = create(gameSize, gameSize)
+
 myMatrix = game
 oppMatrix = -game.T
 
@@ -34,6 +36,9 @@ oppMixedStrategy[oppCurBestIndex] = 1
 myIndexes = [0]
 oppIndexes = [0]
 
+# Initializing exploitabilities
+exploitabilities = []
+
 # Loop Starts
 
 while(True):
@@ -43,9 +48,12 @@ while(True):
     myBestResponse = get_row_best_response(myMatrix, oppMixedStrategy)
     oppBestResponse = get_row_best_response(oppMatrix, myMixedStrategy)
 
-    print("myBestReponse: ", myBestResponse)
-    print("oppBestReponse: ", oppBestResponse)
+    # print("myBestReponse: ", myBestResponse)
+    # print("oppBestReponse: ", oppBestResponse)
+    # print("myIndexes: ", myIndexes)
+    # print("oppIndexes: ", oppIndexes)
 
+    # Exit Condition
     if (myBestResponse in myIndexes) and (oppBestResponse in oppIndexes):
         break
 
@@ -53,10 +61,10 @@ while(True):
     DOadd(oppIndexes, oppBestResponse)
 
     # Create minigame
-    print("myIndexes: ", myIndexes)
-    print("oppIndexes: ", oppIndexes)
+    # print("myIndexes: ", myIndexes)
+    # print("oppIndexes: ", oppIndexes)
     minigame = [[0] * len(oppIndexes) for _ in range(len(myIndexes))]
-    print("minigame: ", minigame)
+    # print("minigame: ", minigame)
 
     cur_x = 0
     cur_y = 0
@@ -64,22 +72,23 @@ while(True):
         if x in myIndexes:
             for y in range(0, gameSize):
                 if y in oppIndexes:
-                    print("cur_x: ", cur_y)
-                    print("cur_y: ", cur_y)
+                    # print("cur_x: ", cur_y)
+                    # print("cur_y: ", cur_y)
                     minigame[cur_x][cur_y] = game[x][y]
                     cur_y += 1
             cur_x += 1
             cur_y = 0
-    print("game: ", game)
-    print("minigame: ", minigame)
+    # print("game: ", game)
+    # print("minigame: ", minigame)
 
     # Implement Regret Matching & Find New Mixed Strategies
     finder = Finder(np.array(minigame))
-    finder.train(1000)
+    new_exploitabilities = finder.train(10000)
+    exploitabilities = np.concatenate((exploitabilities, new_exploitabilities))
     myNewMixedStrategy = finder.getMyAverageStrategy()
     oppNewMixedStrategy = finder.getOppAverageStrategy()
-    print("myNewMixedStrategy: ", myNewMixedStrategy)
-    print("oppNewMixedStrategy: ", oppNewMixedStrategy)
+    # print("myNewMixedStrategy: ", myNewMixedStrategy)
+    # print("oppNewMixedStrategy: ", oppNewMixedStrategy)
 
     my_cur_index = 0
     opp_cur_index = 0
@@ -91,8 +100,15 @@ while(True):
             oppMixedStrategy[index] = oppNewMixedStrategy[opp_cur_index]
             opp_cur_index += 1
 
-    print(myMixedStrategy)
-    print(oppMixedStrategy)
+    # print(myMixedStrategy)
+    # print(oppMixedStrategy)
 
 print("My Nash Equilibrium: ", myMixedStrategy)
 print("Opp Nash Equilibrium: ", oppMixedStrategy)
+# print(exploitabilities)
+
+plt.plot(exploitabilities)
+# plt.yscale('log')
+# plt.xscale('log')
+plt.title('DO')
+plt.show()
