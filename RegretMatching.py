@@ -171,8 +171,8 @@ def create(x: int, y: int):
 # rm_exploitabilitiesz = []
 # print(create(5, 3))
 
-#Initialize Game
-# myGame = create(3, 5)
+# # Initialize Game
+# myGame = create(100, 100)
 # print(myGame)
 # for t in tqdm(range(8)):
 #     # print(myGame)
@@ -181,7 +181,7 @@ def create(x: int, y: int):
 #     finder = Finder(myGame)
 
 #     # Train!
-#     rm_exploitabilitiesz.append(finder.train(1000))
+#     rm_exploitabilitiesz.append(finder.train(10000))
 
 #     # Nash Equilibrium!
 #     print(finder.getMyAverageStrategy())

@@ -16,7 +16,7 @@ def DOadd(indexes: list, response: int):
         return indexes
 
 # Initialize 100 x 100 matrix (& opp.matrix)
-gameSize = 100
+gameSize = 10
 game = create(gameSize, gameSize)
 
 myMatrix = game
@@ -84,7 +84,7 @@ while(True):
     # Implement Regret Matching & Find New Mixed Strategies
     finder = Finder(np.array(minigame))
     new_exploitabilities = finder.train(10000)
-    exploitabilities = np.concatenate((exploitabilities, new_exploitabilities))
+    exploitabilities.append(new_exploitabilities)
     myNewMixedStrategy = finder.getMyAverageStrategy()
     oppNewMixedStrategy = finder.getOppAverageStrategy()
     # print("myNewMixedStrategy: ", myNewMixedStrategy)
@@ -105,10 +105,25 @@ while(True):
 
 print("My Nash Equilibrium: ", myMixedStrategy)
 print("Opp Nash Equilibrium: ", oppMixedStrategy)
-# print(exploitabilities)
 
-plt.plot(exploitabilities)
-# plt.yscale('log')
-# plt.xscale('log')
-plt.title('DO')
+length = len(exploitabilities)
+rows = (int)(length / 5) + 1
+fig, axs = plt.subplots(rows, 5, figsize=(11, 3 * rows))
+
+for i, ax in enumerate(axs.flat):
+    if (i >= length):
+        break
+    ax.set_title(f'DO Iteration {i}')
+    ax.plot(exploitabilities[i])
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.set_xlabel('Counts')
+    ax.set_ylabel('Exploitability')
+
+plt.tight_layout()
 plt.show()
+
+# plt.plot(exploitabilities)
+# plt.yscale('log')
+# plt.title('DO')
+# plt.show()
