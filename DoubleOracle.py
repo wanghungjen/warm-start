@@ -16,7 +16,7 @@ def DOadd(indexes: list, response: int):
         return indexes
 
 # Initialize 100 x 100 matrix (& opp.matrix)
-gameSize = 10
+gameSize = 20
 game = create(gameSize, gameSize)
 
 myMatrix = game
@@ -38,11 +38,12 @@ oppIndexes = [0]
 
 # Initializing exploitabilities
 exploitabilities = []
+tippings = []
 
 # Loop Starts
 
 while(True):
-    print("ITERATION START\n")
+    # print("ITERATION START\n")
 
     # Determine "best response" indexes for both player 1 and player 2
     myBestResponse = get_row_best_response(myMatrix, oppMixedStrategy)
@@ -84,6 +85,7 @@ while(True):
     # Implement Regret Matching & Find New Mixed Strategies
     finder = Finder(np.array(minigame))
     new_exploitabilities = finder.train(10000)
+    tippings.append(finder.tippingPoint)
     exploitabilities.append(new_exploitabilities)
     myNewMixedStrategy = finder.getMyAverageStrategy()
     oppNewMixedStrategy = finder.getOppAverageStrategy()
@@ -108,7 +110,7 @@ print("Opp Nash Equilibrium: ", oppMixedStrategy)
 
 length = len(exploitabilities)
 rows = (int)(length / 5) + 1
-fig, axs = plt.subplots(rows, 5, figsize=(11, 3 * rows))
+fig, axs = plt.subplots(rows, 5, figsize=(10, 2 * rows))
 
 for i, ax in enumerate(axs.flat):
     if (i >= length):
@@ -117,7 +119,7 @@ for i, ax in enumerate(axs.flat):
     ax.plot(exploitabilities[i])
     ax.set_yscale('log')
     ax.set_xscale('log')
-    ax.set_xlabel('Counts')
+    ax.set_xlabel(f'# till 0.01: {tippings[i]}')
     ax.set_ylabel('Exploitability')
 
 plt.tight_layout()

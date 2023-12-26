@@ -2,6 +2,7 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+import time
 
 # TODO: Figure out numberOfActions correctly
 class Finder():
@@ -21,6 +22,7 @@ class Finder():
         self.oppStrategy: list[float] = [0] * self.numberOfOppActions
         self.oppStrategySum: list[float] = [0] * self.numberOfOppActions
         self.exploitabilities: list[float] = []
+        self.tippingPoint = -1
 
     # Get current mixed strategy through regret-matching
     def getStrategy(self) -> list[float]:
@@ -107,6 +109,7 @@ class Finder():
         oppActionUtility: list[float] = [0] * self.numberOfOppActions
 
         for i in range(0, iterations):
+            # print(i)
             myStrategy: list[float] = self.getStrategy()
             oppStrategy: list[float] = self.getOppStrategy()
             
@@ -115,21 +118,27 @@ class Finder():
             # myAction: int = get_row_best_response(matrix, np.array(oppStrategy))
             # oppAction: int = get_row_best_response(oppMatrix, np.array(myStrategy))
             
-            for i in range(0, self.numberOfMyActions):
-                myActionUtility[i] = self.matrix[i][oppAction]
+            for j in range(0, self.numberOfMyActions):
+                myActionUtility[j] = self.matrix[j][oppAction]
                 
-            for i in range(0, self.numberOfOppActions):    
-                oppActionUtility[i] = self.oppMatrix[i][myAction]
+            for j in range(0, self.numberOfOppActions):    
+                oppActionUtility[j] = self.oppMatrix[j][myAction]
             
-            for i in range(0, self.numberOfMyActions):
-                self.regretSum[i] += myActionUtility[i] - myActionUtility[myAction]
+            for j in range(0, self.numberOfMyActions):
+                self.regretSum[j] += myActionUtility[j] - myActionUtility[myAction]
             
-            for i in range(0, self.numberOfOppActions):
-                self.oppRegretSum[i] += oppActionUtility[i] - oppActionUtility[oppAction]
+            for j in range(0, self.numberOfOppActions):
+                self.oppRegretSum[j] += oppActionUtility[j] - oppActionUtility[oppAction]
 
-            exploitabilities.append(self.get_exploitability(self.matrix, np.array(self.getMyAverageStrategy()), np.array(self.getOppAverageStrategy())))
+            currentExploitability = self.get_exploitability(self.matrix, np.array(self.getMyAverageStrategy()), np.array(self.getOppAverageStrategy()))
+            if (currentExploitability <= 0.01 and self.tippingPoint == -1):
+                # print(currentExploitability)
+                # print(i)
+                self.tippingPoint = i
+
+            exploitabilities.append(currentExploitability)
+            # print(i)
         return exploitabilities
-
 
     def getMyAverageStrategy(self) -> list[float]:
         averageStrategy: list[float] = [0] * self.numberOfMyActions
